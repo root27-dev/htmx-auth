@@ -1,13 +1,22 @@
 package views
 
 
-
+import c "github.com/root27-dev/htmx-auth/components"
 
 
 templ Index(){
 @Base()
+<h1>Welcome to the Auth Example</h1>
 
-@Register(false,false)
+<div id="index">
+
+	<button hx-get="/servelogin">Login</button>
+	<button hx-get="/serveregister">Register</button>
+
+
+
+
+</div>
 
 }
 
@@ -28,7 +37,6 @@ templ Base(){
 </head>
 
 <body>
-	<h1>Welcome to the Auth Example</h1>
 	{ children...}
 
 </body>
@@ -38,40 +46,45 @@ templ Base(){
 
 
 }
-templ Login() {
+templ Login(isAuth bool, email string, authError bool) {
 
 @Base()
 <div id="loginform">
 	<h1>Login</h1>
-	<form action="/login" method="post">
-		<label for="email">Email address:</label>
-		<input type="email" id="email" name="email" required>
-		<label for="password">Password:</label>
-		<input type="password" id="password" name="password" required>
-		<button type="submit">Login</button>
-	</form>
+
+	@c.LoginForm()
+	if isAuth {
+
+	<div style="color:green">Welcome {email}</div>
+
+	}
+
+	if authError {
+
+	<div style="color:red">Invalid email or password</div>
+
+	}
+	<button hx-get="/serveregister">register page</button>
+
+
+
 </div>
 }
-templ Register(isExist, isCreated bool){
+templ Register(isExist bool){
 
+@Base()
 <div id="registerform">
 	<h1>Register</h1>
-	<form hx-post="/register" hx-target="#registerform" hx-swap="outerHTML">
-		<label for="email">Email address</label>
-		<input type="email" id="email" name="email">
-		<label for="password">Password</label>
-		<input type="password" id="password" name="password">
-		<button type="submit">Register</button>
-	</form>
-	<button hx-get="/servelogin" hx-target="#registerform">Back to login</button>
+	@c.RegisterForm()
 
 	if isExist {
-	<div style="color:red">User already exists</div>
+
+	<div style="color:red">User already exist</div>
+
+
 	}
 
-	if isCreated {
-	<div style="color:green">User created</div>
-	}
+	<button hx-get="/servelogin">login page</button>
 
 
 </div>

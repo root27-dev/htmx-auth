@@ -1,65 +1,108 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
+	"github.com/a-h/templ"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	v "github.com/root27-dev/htmx-auth/views"
+	"net/http"
+	"time"
 )
 
+func Render(ctx echo.Context, statusCode int, t templ.Component) error {
+	buf := templ.GetBuffer()
+	defer templ.ReleaseBuffer(buf)
+
+	if err := t.Render(ctx.Request().Context(), buf); err != nil {
+		return err
+	}
+
+	return ctx.HTML(statusCode, buf.String())
+}
 func main() {
 
 	users := make(map[string]string)
 
+	e := echo.New()
+
+	e.Use(middleware.Logger())
+
 	// Pages
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	e.GET("/", func(e echo.Context) error {
 
-		index := v.Index()
-
-		index.Render(r.Context(), w)
+		return Render(e, 200, v.Index())
 
 	})
 
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+	e.GET("/login", func(e echo.Context) error {
 
-		email := r.FormValue("email")
-		password := r.FormValue("password")
+		return Render(e, 200, v.Login(false, "", false))
 
-		if _, ok := users[email]; ok {
-			//USer already exists
+	})
+	e.GET("/register", func(e echo.Context) error {
 
-			register := v.Register(true, false)
-
-			register.Render(r.Context(), w)
-
-		}
-
-		users[email] = password
-
-		register := v.Register(false, true)
-
-		register.Render(r.Context(), w)
+		return Render(e, 200, v.Register(false))
 
 	})
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	e.GET("/servelogin", func(e echo.Context) error {
 
-		login := v.Login()
+		e.Response().Header().Set("Hx-Redirect", "/login")
 
-		login.Render(r.Context(), w)
-
+		return nil
 	})
+	e.GET("/serveregister", func(e echo.Context) error {
 
-	http.HandleFunc("/servelogin", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Hx-Redirect", "/login")
+		e.Response().Header().Set("Hx-Redirect", "/register")
 
+		return nil
 	})
 
 	// Handlers
 
-	fmt.Println("Server is running on port 8080")
+	e.POST("/api-register", func(e echo.Context) error {
 
-	http.ListenAndServe(":8080", nil)
+		email := e.FormValue("email")
+		password := e.FormValue("password")
+
+		if _, ok := users[email]; ok {
+
+			return Render(e, 200, v.Register(true))
+		}
+
+		users[email] = password
+
+		e.Response().Header().Set("Hx-Redirect", "/login")
+
+		return nil
+
+	})
+
+	e.POST("/api-login", func(e echo.Context) error {
+
+		email := e.FormValue("email")
+
+		password := e.FormValue("password")
+
+		if p, ok := users[email]; ok {
+
+			if p == password {
+				// Demo for cookie example
+				cookie := new(http.Cookie)
+				cookie.Name = "example"
+				cookie.Value = email
+				cookie.Expires = time.Now().Add(24 * time.Hour)
+				e.SetCookie(cookie)
+
+				return Render(e, 200, v.Login(true, email, false))
+			}
+		}
+
+		return Render(e, 200, v.Login(false, "", true))
+
+	})
+
+	e.Logger.Fatal(e.Start(":8080"))
 
 }

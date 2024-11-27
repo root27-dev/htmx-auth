@@ -1,0 +1,29 @@
+package components
+
+
+
+
+
+templ RegisterForm() {
+
+
+<form hx-post="/api-register" hx-target="#registerform" hx-swap="outerHTML">
+	<label for="email">Email address</label>
+	<input type="email" id="email" name="email">
+	<label for="password">Password</label>
+	<input type="password" id="password" name="password">
+	<button type="submit">Register</button>
+</form>
+
+
+}
+
+templ LoginForm() {
+<form hx-post="/api-login" hx-target="#loginform" hx-swap="outerHTML">
+	<label for="email">Email address:</label>
+	<input type="email" id="email" name="email" required>
+	<label for="password">Password:</label>
+	<input type="password" id="password" name="password" required>
+	<button type="submit">Login</button>
+</form>
+}
